@@ -27,30 +27,28 @@ public:
     using args = tuple<Args...>;
 };
 
-class ICommandRunner {
-  public:
-    virtual bool run(const json::Doc &d, common::ParseError& e) const = 0;
-};
 
 template<CommandId Id, typename T, typename I>
 class CommandRunner
 {};
 
 template<CommandId Id, typename... T, typename I, I... Is>
-class CommandRunner<Id, tuple<T...>, integer_sequence<I, Is...>> : public ICommandRunner
+class CommandRunner<Id, tuple<T...>, integer_sequence<I, Is...>>
 {
 
 private:
-    template <typename... J>
-    bool _run(Command<Id>& cmd, tuple<J...> args) const
+    template <typename D, typename... J>
+    D _run(Command<Id>& cmd, tuple<J...> args) const
     {
         auto f  = bind_front(&Command<Id>::f, &cmd);
         return f(get<Is>(args)...);
     }
 
 public:
-    bool run(const json::Doc &d, common::ParseError& e) const
+    template <typename D>
+    D run(const D &d, common::ParseError& e) const
     {
+        D ret;
         Command<Id> cmd;
         /* Assemble the tuple of arguments */
         auto args = make_tuple(
@@ -64,11 +62,10 @@ public:
                 return v;
             }()...);
 
-        bool ret = false;
         if(!e.error)
         {
             /* Call the command function */
-            ret = _run(cmd, args);
+          ret = _run<D>(cmd, args);
         }
         return ret;
     }

@@ -12,11 +12,12 @@ public:
     T getParam(const json::Doc &, common::ParseError &);
 
 
-    bool f(double d, int x)
+    json::Doc f(double d, int x)
     {
         std::cout << d;
         std::cout << x;
-        return true;
+        json::Doc doc;
+        return doc;
     }
 };
 
