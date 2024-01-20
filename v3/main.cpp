@@ -67,16 +67,16 @@ public:
     // checkParam(in, std::get<0>(params));
     //_run
 
-//    auto args = make_tuple(
-//        [&]() -> T
-//        {
-//          T v;
-//          if (!e.error)
-//          {
-//            v = cmd.template getParam<T, Is>(d, e);
-//          }
-//          return v;
-//        }()...);
+    //    auto args = make_tuple(
+    //        [&]() -> T
+    //        {
+    //          T v;
+    //          if (!e.error)
+    //          {
+    //            v = cmd.template getParam<T, Is>(d, e);
+    //          }
+    //          return v;
+    //        }()...);
     return false;
   }
 };
@@ -84,25 +84,30 @@ public:
 } // namespace detail
 
 template <CommandRef Ref, typename D> class Command {
+
 public:
   bool matches(const D& in) {
-    return doc.getParamValue(in, detail::Id<D>()) == MessageSpecType::id;
+    return doc.getParamValue(in, detail::Id<D>()) == MessageSpec::id;
   }
+
   D run(const D& in) {
     /* Check message validity */
-    auto paramsInfo = MessageSpecType::params;
-    auto paramsIndexSequence =
-        make_index_sequence<tuple_size<decltype(paramsInfo)>::value>();
-    doc.template messageIsValid(in, paramsInfo, paramsIndexSequence);
+    doc.template messageIsValid(in, MessageSpec::params, paramsIndexSequence());
+
     return _run(in);
   }
 
 protected:
-  virtual D _run(const D& in) = 0;
+  using MessageSpec = detail::MessageDetail<Ref, D>;
   detail::DocDetail<D> doc;
 
-  using MessageSpecType = detail::MessageDetail<Ref, D>;
-  MessageSpecType messageSpec;
+  virtual D _run(const D& in) = 0;
+
+private:
+  constexpr auto paramsIndexSequence() {
+    return make_index_sequence<
+        tuple_size<decltype(MessageSpec::params)>::value>();
+  }
 };
 
 template <typename D>
